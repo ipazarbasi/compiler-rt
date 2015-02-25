@@ -44,6 +44,7 @@
 #include <unistd.h>
 #include <libkern/OSAtomic.h>
 #include <errno.h>
+#include <mach/mach.h>
 
 namespace __sanitizer {
 
@@ -334,7 +335,20 @@ MacosVersion GetMacosVersion() {
 }
 
 uptr GetRSS() {
-  return 0;
+  kern_return_t result;
+  unsigned count;
+  struct task_basic_info info;
+
+  count = TASK_BASIC_INFO_COUNT;
+  result = task_info(mach_task_self(), TASK_BASIC_INFO, (task_info_t)&info,
+                     &count);
+  if (UNLIKELY(result != KERN_SUCCESS)) {
+    Report("Could not get task info - RSS value will not be available. "
+           "Error: %d\n", result);
+    return 0U;
+  }
+
+  return info.resident_size;
 }
 
 void *internal_start_thread(void (*func)(void *arg), void *arg) { return 0; }
