@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- paritysi2_test.c - Test __paritysi2 -------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -17,7 +18,7 @@
 
 // Returns: 1 if number of bits is odd else returns 0
 
-si_int __paritysi2(si_int a);
+COMPILER_RT_ABI si_int __paritysi2(si_int a);
 
 int naive_parity(si_int a)
 {

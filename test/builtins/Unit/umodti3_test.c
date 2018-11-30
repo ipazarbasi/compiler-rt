@@ -1,3 +1,5 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
+// REQUIRES: int128
 //===-- umodti3_test.c - Test __umodti3 -----------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -18,7 +20,7 @@
 
 // Returns: a % b
 
-tu_int __umodti3(tu_int a, tu_int b);
+COMPILER_RT_ABI tu_int __umodti3(tu_int a, tu_int b);
 
 int test__umodti3(tu_int a, tu_int b, tu_int expected_r)
 {

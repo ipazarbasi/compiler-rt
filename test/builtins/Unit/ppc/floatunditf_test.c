@@ -1,7 +1,9 @@
+// REQUIRES: powerpc-registered-target
+// RUN: %clang_builtins %s -o %t && %run %t
 #include <stdint.h>
 #include <stdio.h>
 
-long double __floatunditf(uint64_t);
+COMPILER_RT_ABI long double __floatunditf(uint64_t);
 
 #include "floatunditf_test.h"
 #include "DD.h"

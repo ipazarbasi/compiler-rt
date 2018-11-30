@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===--------------- trunctfsf2_test.c - Test __trunctfsf2 ----------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -11,13 +12,14 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "int_lib.h"
 #include <stdio.h>
 
 #if __LDBL_MANT_DIG__ == 113
 
 #include "fp_test.h"
 
-float __trunctfsf2(long double a);
+COMPILER_RT_ABI float __trunctfsf2(long double a);
 
 int test__trunctfsf2(long double a, uint32_t expected)
 {

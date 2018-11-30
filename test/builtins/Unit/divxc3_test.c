@@ -1,3 +1,6 @@
+// RUN: %clang_builtins %s %librt -lm -o %t && %run %t
+// REQUIRES: x86-target-arch
+// UNSUPPORTED: powerpc64
 //===-- divxc3_test.c - Test __divxc3 -------------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -18,9 +21,12 @@
 #include <complex.h>
 #include <stdio.h>
 
+// UNSUPPORTED: mips
+// REQUIRES: c99-complex
+
 // Returns: the quotient of (a + ib) / (c + id)
 
-long double _Complex 
+COMPILER_RT_ABI long double _Complex
 __divxc3(long double __a, long double __b, long double __c, long double __d);
 
 enum {zero, non_zero, inf, NaN, non_zero_nan};

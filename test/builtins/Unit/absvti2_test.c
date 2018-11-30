@@ -1,3 +1,5 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
+// REQUIRES: int128
 //===-- absvti2_test.c - Test __absvti2 -----------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -21,7 +23,7 @@
 
 // Effects: aborts if abs(x) < 0
 
-ti_int __absvti2(ti_int a);
+COMPILER_RT_ABI ti_int __absvti2(ti_int a);
 
 int test__absvti2(ti_int a)
 {

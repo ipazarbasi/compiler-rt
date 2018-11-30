@@ -5,7 +5,6 @@
 // RUN: %clangxx_asan -O1 %s -o %t && %run %t | FileCheck %s
 // RUN: %clangxx_asan -O2 %s -o %t && %run %t | FileCheck %s
 // RUN: %clangxx_asan -O3 %s -o %t && %run %t | FileCheck %s
-// XFAIL: arm-linux-gnueabi
 
 #include <stdio.h>
 #include <sched.h>
@@ -22,7 +21,7 @@ int Child(void *arg) {
 
 int main(int argc, char **argv) {
   const int kStackSize = 1 << 20;
-  char child_stack[kStackSize + 1];
+  char __attribute__((aligned(16))) child_stack[kStackSize + 1];
   char *sp = child_stack + kStackSize;  // Stack grows down.
   printf("Parent: %p\n", sp);
   pid_t clone_pid = clone(Child, sp, CLONE_FILES | CLONE_VM, NULL);

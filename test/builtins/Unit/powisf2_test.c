@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- powisf2_test.cpp - Test __powisf2 ---------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -17,7 +18,7 @@
 
 // Returns: a ^ b
 
-float __powisf2(float a, si_int b);
+COMPILER_RT_ABI float __powisf2(float a, si_int b);
 
 int test__powisf2(float a, si_int b, float expected)
 {

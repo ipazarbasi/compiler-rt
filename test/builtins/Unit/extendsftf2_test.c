@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===--------------- extendsftf2_test.c - Test __extendsftf2 --------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -11,13 +12,14 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "int_lib.h"
 #include <stdio.h>
 
 #if __LDBL_MANT_DIG__ == 113
 
 #include "fp_test.h"
 
-long double __extendsftf2(float a);
+COMPILER_RT_ABI long double __extendsftf2(float a);
 
 int test__extendsftf2(float a, uint64_t expectedHi, uint64_t expectedLo)
 {

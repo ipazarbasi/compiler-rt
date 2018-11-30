@@ -6,9 +6,10 @@
 
 // RUN: %clangxx_asan -O0 -DSHARED_LIB %s -fPIC -shared -o %t-so.so
 // RUN: %clangxx_asan -O0 %s %libdl -o %t
-// RUN: env ASAN_OPTIONS=symbolize=0 not %run %t 2>&1 | %asan_symbolize | FileCheck %s
-// XFAIL: arm-linux-gnueabi
-// XFAIL: armv7l-unknown-linux-gnueabihf
+// RUN: %env_asan_opts=symbolize=0 not %run %t 2>&1 | %asan_symbolize | FileCheck %s
+// REQUIRES: stable-runtime
+
+// UNSUPPORTED: ios
 
 #if !defined(SHARED_LIB)
 #include <dlfcn.h>

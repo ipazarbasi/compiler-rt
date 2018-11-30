@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- muldi3_test.c - Test __muldi3 -------------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -14,7 +15,7 @@
 #include "int_lib.h"
 #include <stdio.h>
 
-di_int __muldi3(di_int a, di_int b);
+COMPILER_RT_ABI di_int __muldi3(di_int a, di_int b);
 
 int test__muldi3(di_int a, di_int b, di_int expected)
 {

@@ -4,26 +4,26 @@ set(INTERCEPTION_SOURCES
   interception_linux.cc
   interception_mac.cc
   interception_win.cc
-  interception_type_test.cc
-  )
+  interception_type_test.cc)
+
+set(INTERCEPTION_HEADERS
+  interception.h
+  interception_linux.h
+  interception_mac.h
+  interception_win.h)
 
 include_directories(..)
 
 set(INTERCEPTION_CFLAGS ${SANITIZER_COMMON_CFLAGS})
-append_no_rtti_flag(INTERCEPTION_CFLAGS)
+append_rtti_flag(OFF INTERCEPTION_CFLAGS)
 
-if(APPLE)
-  # Build universal binary on APPLE.
-  foreach(os ${SANITIZER_COMMON_SUPPORTED_DARWIN_OS})
-    add_compiler_rt_darwin_object_library(RTInterception ${os}
-      ARCH ${SANITIZER_COMMON_SUPPORTED_ARCH}
-      SOURCES ${INTERCEPTION_SOURCES}
-      CFLAGS ${INTERCEPTION_CFLAGS})
-  endforeach()
-else()
-  # Otherwise, build separate libraries for each target.
-  foreach(arch ${SANITIZER_COMMON_SUPPORTED_ARCH})
-    add_compiler_rt_object_library(RTInterception ${arch}
-      SOURCES ${INTERCEPTION_SOURCES} CFLAGS ${INTERCEPTION_CFLAGS})
-  endforeach()
+add_compiler_rt_object_libraries(RTInterception
+    OS ${SANITIZER_COMMON_SUPPORTED_OS}
+    ARCHS ${SANITIZER_COMMON_SUPPORTED_ARCH}
+    SOURCES ${INTERCEPTION_SOURCES}
+    ADDITIONAL_HEADERS ${INTERCEPTION_HEADERS}
+    CFLAGS ${INTERCEPTION_CFLAGS})
+
+if(COMPILER_RT_INCLUDE_TESTS)
+  add_subdirectory(tests)
 endif()

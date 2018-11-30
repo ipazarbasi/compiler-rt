@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- negvdi2_test.c - Test __negvdi2 -----------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -18,7 +19,7 @@
 
 // Effects: aborts if -a overflows
 
-di_int __negvdi2(di_int a);
+COMPILER_RT_ABI di_int __negvdi2(di_int a);
 
 int test__negvdi2(di_int a)
 {

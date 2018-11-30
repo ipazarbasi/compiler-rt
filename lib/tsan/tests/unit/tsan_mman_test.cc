@@ -53,9 +53,10 @@ TEST(Mman, UserRealloc) {
   uptr pc = 0;
   {
     void *p = user_realloc(thr, pc, 0, 0);
-    // Strictly saying this is incorrect, realloc(NULL, N) is equivalent to
-    // malloc(N), thus must return non-NULL pointer.
-    EXPECT_EQ(p, (void*)0);
+    // Realloc(NULL, N) is equivalent to malloc(N), thus must return
+    // non-NULL pointer.
+    EXPECT_NE(p, (void*)0);
+    user_free(thr, pc, p);
   }
   {
     void *p = user_realloc(thr, pc, 0, 100);
@@ -67,6 +68,7 @@ TEST(Mman, UserRealloc) {
     void *p = user_alloc(thr, pc, 100);
     EXPECT_NE(p, (void*)0);
     memset(p, 0xde, 100);
+    // Realloc(P, 0) is equivalent to free(P) and returns NULL.
     void *p2 = user_realloc(thr, pc, p, 0);
     EXPECT_EQ(p2, (void*)0);
   }
@@ -135,19 +137,61 @@ TEST(Mman, Stats) {
   EXPECT_EQ(unmapped0, __sanitizer_get_unmapped_bytes());
 }
 
-TEST(Mman, CallocOverflow) {
-#if SANITIZER_DEBUG
-  // EXPECT_DEATH clones a thread with 4K stack,
-  // which is overflown by tsan memory accesses functions in debug mode.
-  return;
-#endif
-  size_t kArraySize = 4096;
-  volatile size_t kMaxSizeT = std::numeric_limits<size_t>::max();
-  volatile size_t kArraySize2 = kMaxSizeT / kArraySize + 10;
-  volatile void *p = NULL;
-  EXPECT_DEATH(p = calloc(kArraySize, kArraySize2),
-               "allocator is terminating the process instead of returning 0");
+TEST(Mman, Valloc) {
+  ThreadState *thr = cur_thread();
+  uptr page_size = GetPageSizeCached();
+
+  void *p = user_valloc(thr, 0, 100);
+  EXPECT_NE(p, (void*)0);
+  user_free(thr, 0, p);
+
+  p = user_pvalloc(thr, 0, 100);
+  EXPECT_NE(p, (void*)0);
+  user_free(thr, 0, p);
+
+  p = user_pvalloc(thr, 0, 0);
+  EXPECT_NE(p, (void*)0);
+  EXPECT_EQ(page_size, __sanitizer_get_allocated_size(p));
+  user_free(thr, 0, p);
+}
+
+#if !SANITIZER_DEBUG
+// EXPECT_DEATH clones a thread with 4K stack,
+// which is overflown by tsan memory accesses functions in debug mode.
+
+TEST(Mman, Memalign) {
+  ThreadState *thr = cur_thread();
+
+  void *p = user_memalign(thr, 0, 8, 100);
+  EXPECT_NE(p, (void*)0);
+  user_free(thr, 0, p);
+
+  // TODO(alekseyshl): Remove this death test when memalign is verified by
+  // tests in sanitizer_common.
+  p = NULL;
+  EXPECT_DEATH(p = user_memalign(thr, 0, 7, 100),
+               "invalid-allocation-alignment");
   EXPECT_EQ(0L, p);
+}
+
+#endif
+
+TEST(Mman, PosixMemalign) {
+  ThreadState *thr = cur_thread();
+
+  void *p = NULL;
+  int res = user_posix_memalign(thr, 0, &p, 8, 100);
+  EXPECT_NE(p, (void*)0);
+  EXPECT_EQ(res, 0);
+  user_free(thr, 0, p);
+}
+
+TEST(Mman, AlignedAlloc) {
+  ThreadState *thr = cur_thread();
+
+  void *p = user_aligned_alloc(thr, 0, 8, 64);
+  EXPECT_NE(p, (void*)0);
+  user_free(thr, 0, p);
 }
 
 }  // namespace __tsan

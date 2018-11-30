@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- addvdi3_test.c - Test __addvdi3 -----------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -18,7 +19,7 @@
 
 // Effects: aborts if a + b overflows
 
-di_int __addvdi3(di_int a, di_int b);
+COMPILER_RT_ABI di_int __addvdi3(di_int a, di_int b);
 
 int test__addvdi3(di_int a, di_int b)
 {

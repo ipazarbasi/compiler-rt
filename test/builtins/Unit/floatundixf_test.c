@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- floatundixf_test.c - Test __floatundixf ---------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -24,7 +25,7 @@
 // gggg gggg gggg gggg gggg gggg gggg gggg | gggg gggg gggg gggg seee eeee eeee eeee |
 // 1mmm mmmm mmmm mmmm mmmm mmmm mmmm mmmm | mmmm mmmm mmmm mmmm mmmm mmmm mmmm mmmm
 
-long double __floatundixf(du_int a);
+COMPILER_RT_ABI long double __floatundixf(du_int a);
 
 int test__floatundixf(du_int a, long double expected)
 {

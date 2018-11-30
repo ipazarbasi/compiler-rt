@@ -4,36 +4,51 @@
 include(AddCompilerRT)
 include(SanitizerUtils)
 
-if(COMPILER_RT_HAS_SANITIZER_COMMON)
-  add_subdirectory(interception)
+# Hoist the building of sanitizer_common on whether we're building either the
+# sanitizers or xray (or both).
+#
+#TODO: Refactor sanitizer_common into smaller pieces (e.g. flag parsing, utils).
+if (COMPILER_RT_HAS_SANITIZER_COMMON AND
+    (COMPILER_RT_BUILD_SANITIZERS OR COMPILER_RT_BUILD_XRAY))
   add_subdirectory(sanitizer_common)
-  add_subdirectory(lsan)
 endif()
 
-if(COMPILER_RT_HAS_ASAN)
-  add_subdirectory(asan)
+if(COMPILER_RT_BUILD_BUILTINS)
+  add_subdirectory(builtins)
 endif()
 
-add_subdirectory(builtins)
+function(compiler_rt_build_runtime runtime)
+  string(TOUPPER ${runtime} runtime_uppercase)
+  if(COMPILER_RT_HAS_${runtime_uppercase})
+    add_subdirectory(${runtime})
+    if(${runtime} STREQUAL tsan)
+      add_subdirectory(tsan/dd)
+    endif()
+  endif()
+endfunction()
 
-if(COMPILER_RT_HAS_DFSAN)
-  add_subdirectory(dfsan)
+if(COMPILER_RT_BUILD_SANITIZERS)
+  compiler_rt_build_runtime(interception)
+
+  if(COMPILER_RT_HAS_SANITIZER_COMMON)
+    add_subdirectory(stats)
+    add_subdirectory(lsan)
+    add_subdirectory(ubsan)
+  endif()
+
+  foreach(sanitizer ${COMPILER_RT_SANITIZERS_TO_BUILD})
+    compiler_rt_build_runtime(${sanitizer})
+  endforeach()
 endif()
 
-if(COMPILER_RT_HAS_MSAN)
-  add_subdirectory(msan)
+if(COMPILER_RT_BUILD_PROFILE AND COMPILER_RT_HAS_PROFILE)
+  compiler_rt_build_runtime(profile)
 endif()
 
-if(COMPILER_RT_HAS_PROFILE)
-  add_subdirectory(profile)
+if(COMPILER_RT_BUILD_XRAY)
+  compiler_rt_build_runtime(xray)
 endif()
 
-if(COMPILER_RT_HAS_TSAN)
-  add_subdirectory(tsan)
-  add_subdirectory(tsan/dd)
+if(COMPILER_RT_BUILD_LIBFUZZER)
+  compiler_rt_build_runtime(fuzzer)
 endif()
-
-if(COMPILER_RT_HAS_UBSAN)
-  add_subdirectory(ubsan)
-endif()
-

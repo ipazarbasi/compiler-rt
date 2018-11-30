@@ -1,21 +1,21 @@
 // XFAIL: *
 
-// RUN: %clangxx_cfi -o %t %s
-// RUN: not --crash %t 2>&1 | FileCheck --check-prefix=CFI %s
+// RUN: %clangxx_cfi -o %t1 %s
+// RUN: %expect_crash %run %t1 2>&1 | FileCheck --check-prefix=CFI %s
 
-// RUN: %clangxx_cfi -DB32 -o %t %s
-// RUN: not --crash %t 2>&1 | FileCheck --check-prefix=CFI %s
+// RUN: %clangxx_cfi -DB32 -o %t2 %s
+// RUN: %expect_crash %run %t2 2>&1 | FileCheck --check-prefix=CFI %s
 
-// RUN: %clangxx_cfi -DB64 -o %t %s
-// RUN: not --crash %t 2>&1 | FileCheck --check-prefix=CFI %s
+// RUN: %clangxx_cfi -DB64 -o %t3 %s
+// RUN: %expect_crash %run %t3 2>&1 | FileCheck --check-prefix=CFI %s
 
-// RUN: %clangxx_cfi -DBM -o %t %s
-// RUN: not --crash %t 2>&1 | FileCheck --check-prefix=CFI %s
+// RUN: %clangxx_cfi -DBM -o %t4 %s
+// RUN: %expect_crash %run %t4 2>&1 | FileCheck --check-prefix=CFI %s
 
-// RUN: %clangxx -o %t %s
-// RUN: %t 2>&1 | FileCheck --check-prefix=NCFI %s
+// RUN: %clangxx -o %t5 %s
+// RUN: %run %t5 2>&1 | FileCheck --check-prefix=NCFI %s
 
-// Tests that the CFI enforcement distinguishes betwen non-overriding siblings.
+// Tests that the CFI enforcement distinguishes between non-overriding siblings.
 // XFAILed as not implemented yet.
 
 #include <stdio.h>
@@ -37,20 +37,7 @@ struct C : A {
 };
 
 int main() {
-#ifdef B32
-  break_optimization(new Deriver<B, 0>);
-#endif
-
-#ifdef B64
-  break_optimization(new Deriver<B, 0>);
-  break_optimization(new Deriver<B, 1>);
-#endif
-
-#ifdef BM
-  break_optimization(new Deriver<B, 0>);
-  break_optimization(new Deriver<B, 1>);
-  break_optimization(new Deriver<B, 2>);
-#endif
+  create_derivers<B>();
 
   B *b = new B;
   break_optimization(b);

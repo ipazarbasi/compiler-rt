@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- mulosi4_test.c - Test __mulosi4 -----------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -18,7 +19,7 @@
 
 // Effects: aborts if a * b overflows
 
-si_int __mulosi4(si_int a, si_int b, int *overflow);
+COMPILER_RT_ABI si_int __mulosi4(si_int a, si_int b, int *overflow);
 
 int test__mulosi4(si_int a, si_int b, si_int expected, int expected_overflow)
 {

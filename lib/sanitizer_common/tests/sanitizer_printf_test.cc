@@ -23,9 +23,9 @@ TEST(Printf, Basic) {
   char buf[1024];
   uptr len = internal_snprintf(buf, sizeof(buf),
       "a%db%zdc%ue%zuf%xh%zxq%pe%sr",
-      (int)-1, (long)-2, // NOLINT
-      (unsigned)-4, (unsigned long)5, // NOLINT
-      (unsigned)10, (unsigned long)11, // NOLINT
+      (int)-1, (uptr)-2, // NOLINT
+      (unsigned)-4, (uptr)5, // NOLINT
+      (unsigned)10, (uptr)11, // NOLINT
       (void*)0x123, "_string_");
   EXPECT_EQ(len, strlen(buf));
 
@@ -148,6 +148,14 @@ TEST(Printf, Precision) {
   len = internal_snprintf(buf, sizeof(buf), "%.*s", 6, "12345");
   EXPECT_EQ(5U, len);
   EXPECT_STREQ("12345", buf);
+  len = internal_snprintf(buf, sizeof(buf), "%-6s", "12345");
+  EXPECT_EQ(6U, len);
+  EXPECT_STREQ("12345 ", buf);
+  // Check that width does not overflow the smaller buffer, although
+  // 10 chars is requested, it stops at the buffer size, 8.
+  len = internal_snprintf(buf, 8, "%-10s", "12345");
+  EXPECT_EQ(10U, len);  // The required size reported.
+  EXPECT_STREQ("12345  ", buf);
 }
 
 }  // namespace __sanitizer

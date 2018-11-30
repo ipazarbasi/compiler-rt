@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- divmodsi4_test.c - Test __divmodsi4 -------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -16,7 +17,7 @@
 
 // Returns: a / b
 
-extern si_int __divmodsi4(si_int a, si_int b, si_int* rem);
+extern COMPILER_RT_ABI si_int __divmodsi4(si_int a, si_int b, si_int* rem);
 
 
 int test__divmodsi4(si_int a, si_int b, 

@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- fixxfdi_test.c - Test __fixxfdi -----------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -25,7 +26,7 @@
 // gggg gggg gggg gggg gggg gggg gggg gggg | gggg gggg gggg gggg seee eeee eeee eeee |
 // 1mmm mmmm mmmm mmmm mmmm mmmm mmmm mmmm | mmmm mmmm mmmm mmmm mmmm mmmm mmmm mmmm
 
-di_int __fixxfdi(long double a);
+COMPILER_RT_ABI di_int __fixxfdi(long double a);
 
 int test__fixxfdi(long double a, di_int expected)
 {

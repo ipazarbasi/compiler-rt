@@ -1,4 +1,12 @@
 // RUN: %clangxx_tsan -O1 %s -o %t && %run %t 2>&1 | FileCheck %s
+
+// UNSUPPORTED: powerpc64le
+
+// FIXME: Remove the test or find how to fix this.
+// On some distributions, probably with newer glibc, tsan initialization calls
+// dlsym which then calls malloc and crashes because of tsan is not initialized.
+// UNSUPPORTED: linux
+
 #include <stdio.h>
 
 // Defined by tsan.
@@ -8,7 +16,7 @@ extern "C" void __interceptor_free(void *p);
 extern "C" void *malloc(unsigned long size) {
   static int first = 0;
   if (__sync_lock_test_and_set(&first, 1) == 0)
-    printf("user malloc\n");
+    fprintf(stderr, "user malloc\n");
   return __interceptor_malloc(size);
 }
 

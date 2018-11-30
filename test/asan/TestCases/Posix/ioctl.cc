@@ -1,5 +1,5 @@
-// RUN: %clangxx_asan -O0 -g %s -o %t && ASAN_OPTIONS=handle_ioctl=1 not %run %t 2>&1 | FileCheck %s
-// RUN: %clangxx_asan -O3 -g %s -o %t && ASAN_OPTIONS=handle_ioctl=1 not %run %t 2>&1 | FileCheck %s
+// RUN: %clangxx_asan -O0 -g %s -o %t && %env_asan_opts=handle_ioctl=1 not %run %t 2>&1 | FileCheck %s
+// RUN: %clangxx_asan -O3 -g %s -o %t && %env_asan_opts=handle_ioctl=1 not %run %t 2>&1 | FileCheck %s
 
 // RUN: %clangxx_asan -O0 -g %s -o %t && %run %t
 // RUN: %clangxx_asan -O3 -g %s -o %t && %run %t
@@ -9,6 +9,10 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+#if defined(__sun__) && defined(__svr4__)
+#include <sys/filio.h>
+#endif
 
 int main(int argc, char **argv) {
   int fd = socket(AF_INET, SOCK_DGRAM, 0);

@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===--------------- floatunsitf_test.c - Test __floatunsitf --------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -11,13 +12,14 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "int_lib.h"
 #include <stdio.h>
 
 #if __LDBL_MANT_DIG__ == 113
 
 #include "fp_test.h"
 
-long double __floatunsitf(unsigned int a);
+COMPILER_RT_ABI long double __floatunsitf(unsigned int a);
 
 int test__floatunsitf(unsigned int a, uint64_t expectedHi, uint64_t expectedLo)
 {

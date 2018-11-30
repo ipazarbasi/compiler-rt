@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- divdc3_test.c - Test __divdc3 -------------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -16,9 +17,12 @@
 #include <complex.h>
 #include <stdio.h>
 
+// REQUIRES: c99-complex
+
 // Returns: the quotient of (a + ib) / (c + id)
 
-double _Complex __divdc3(double __a, double __b, double __c, double __d);
+COMPILER_RT_ABI double _Complex
+__divdc3(double __a, double __b, double __c, double __d);
 
 enum {zero, non_zero, inf, NaN, non_zero_nan};
 

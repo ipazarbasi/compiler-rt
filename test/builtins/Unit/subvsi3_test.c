@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- subvsi3_test.c - Test __subvsi3 -----------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -19,7 +20,7 @@
 
 // Effects: aborts if a - b overflows
 
-si_int __subvsi3(si_int a, si_int b);
+COMPILER_RT_ABI si_int __subvsi3(si_int a, si_int b);
 
 int test__subvsi3(si_int a, si_int b)
 {

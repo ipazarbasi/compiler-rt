@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- negdi2_test.c - Test __negdi2 -------------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -16,7 +17,7 @@
 
 // Returns: -a
 
-di_int __negdi2(di_int a);
+COMPILER_RT_ABI di_int __negdi2(di_int a);
 
 int test__negdi2(di_int a, di_int expected)
 {

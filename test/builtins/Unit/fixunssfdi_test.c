@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- fixunssfdi_test.c - Test __fixunssfdi -----------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -24,7 +25,7 @@
 
 // seee eeee emmm mmmm mmmm mmmm mmmm mmmm
 
-du_int __fixunssfdi(float a);
+COMPILER_RT_ABI du_int __fixunssfdi(float a);
 
 int test__fixunssfdi(float a, du_int expected)
 {

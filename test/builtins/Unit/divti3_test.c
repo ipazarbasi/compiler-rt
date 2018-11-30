@@ -1,3 +1,5 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
+// REQUIRES: int128
 //===-- divti3_test.c - Test __divti3 -------------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -18,7 +20,7 @@
 
 // Returns: a / b
 
-ti_int __divti3(ti_int a, ti_int b);
+COMPILER_RT_ABI ti_int __divti3(ti_int a, ti_int b);
 
 int test__divti3(ti_int a, ti_int b, ti_int expected)
 {

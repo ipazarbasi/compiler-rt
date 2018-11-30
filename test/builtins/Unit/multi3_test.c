@@ -1,3 +1,5 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
+// REQUIRES: int128
 //===-- multi3_test.c - Test __multi3 -------------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -16,7 +18,7 @@
 
 #ifdef CRT_HAS_128BIT
 
-ti_int __multi3(ti_int a, ti_int b);
+COMPILER_RT_ABI ti_int __multi3(ti_int a, ti_int b);
 
 int test__multi3(ti_int a, ti_int b, ti_int expected)
 {

@@ -2,8 +2,10 @@
 // inside the class.
 // RUN: %clangxx_asan  %s -o %t && %run %t
 //
-// XFAIL: android
-// XFAIL: armv7l-unknown-linux-gnueabihf
+// XFAIL: arm
+
+// UNSUPPORTED: ios
+
 #include <new>
 #include <stdlib.h>
 #include <stdint.h>

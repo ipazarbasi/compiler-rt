@@ -1,3 +1,5 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
+// REQUIRES: int128
 //===-- muloti4_test.c - Test __muloti4 -----------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -20,7 +22,7 @@
 
 // Effects: sets overflow if a * b overflows
 
-ti_int __muloti4(ti_int a, ti_int b, int *overflow);
+COMPILER_RT_ABI ti_int __muloti4(ti_int a, ti_int b, int *overflow);
 
 int test__muloti4(ti_int a, ti_int b, ti_int expected, int expected_overflow)
 {

@@ -1,3 +1,6 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
+// REQUIRES: x86-target-arch
+
 //===-- fixunsxfti_test.c - Test __fixunsxfti -----------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -14,7 +17,7 @@
 #include "int_lib.h"
 #include <stdio.h>
 
-#ifdef CRT_HAS_128BIT
+#if defined(CRT_HAS_128BIT) && HAS_80_BIT_LONG_DOUBLE
 
 // Returns: convert a to a unsigned long long, rounding toward zero.
 //          Negative values all become zero.
@@ -27,7 +30,7 @@
 // gggg gggg gggg gggg gggg gggg gggg gggg | gggg gggg gggg gggg seee eeee eeee eeee |
 // 1mmm mmmm mmmm mmmm mmmm mmmm mmmm mmmm | mmmm mmmm mmmm mmmm mmmm mmmm mmmm mmmm
 
-tu_int __fixunsxfti(long double a);
+COMPILER_RT_ABI tu_int __fixunsxfti(long double a);
 
 int test__fixunsxfti(long double a, tu_int expected)
 {
@@ -52,7 +55,7 @@ char assumption_3[sizeof(long double)*CHAR_BIT == 128] = {0};
 
 int main()
 {
-#ifdef CRT_HAS_128BIT
+#if defined(CRT_HAS_128BIT) && HAS_80_BIT_LONG_DOUBLE
     if (test__fixunsxfti(0.0, 0))
         return 1;
 

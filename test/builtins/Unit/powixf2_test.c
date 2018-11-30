@@ -1,3 +1,6 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
+// UNSUPPORTED: powerpc64
+// REQUIRES: x86-target-arch
 //===-- powixf2_test.cpp - Test __powixf2 ---------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -19,7 +22,7 @@
 
 // Returns: a ^ b
 
-long double __powixf2(long double a, si_int b);
+COMPILER_RT_ABI long double __powixf2(long double a, si_int b);
 
 int test__powixf2(long double a, si_int b, long double expected)
 {

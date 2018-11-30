@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- ashrdi3_test.c - Test __ashrdi3 -----------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -18,7 +19,7 @@
 
 // Precondition:  0 <= b < bits_in_dword
 
-di_int __ashrdi3(di_int a, si_int b);
+COMPILER_RT_ABI di_int __ashrdi3(di_int a, si_int b);
 
 int test__ashrdi3(di_int a, si_int b, di_int expected)
 {

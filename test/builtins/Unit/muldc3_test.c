@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -lm -o %t && %run %t
 //===-- muldc3_test.c - Test __muldc3 -------------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -16,9 +17,12 @@
 #include <complex.h>
 #include <stdio.h>
 
+// REQUIRES: c99-complex
+
 // Returns: the product of a + ib and c + id
 
-double _Complex __muldc3(double __a, double __b, double __c, double __d);
+COMPILER_RT_ABI double _Complex
+__muldc3(double __a, double __b, double __c, double __d);
 
 enum {zero, non_zero, inf, NaN, non_zero_nan};
 

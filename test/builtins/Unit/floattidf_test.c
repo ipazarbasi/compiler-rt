@@ -1,3 +1,5 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
+// REQUIRES: int128
 //===-- floattidf.c - Test __floattidf ------------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -24,7 +26,7 @@
 
 // seee eeee eeee mmmm mmmm mmmm mmmm mmmm | mmmm mmmm mmmm mmmm mmmm mmmm mmmm mmmm
 
-double __floattidf(ti_int a);
+COMPILER_RT_ABI double __floattidf(ti_int a);
 
 int test__floattidf(ti_int a, double expected)
 {

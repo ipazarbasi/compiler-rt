@@ -1,3 +1,5 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
+// REQUIRES: int128
 //===-- mulvti3_test.c - Test __mulvti3 -----------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -20,7 +22,7 @@
 
 // Effects: aborts if a * b overflows
 
-ti_int __mulvti3(ti_int a, ti_int b);
+COMPILER_RT_ABI ti_int __mulvti3(ti_int a, ti_int b);
 
 int test__mulvti3(ti_int a, ti_int b, ti_int expected)
 {
@@ -98,13 +100,13 @@ int main()
     if (test__mulvti3(-81985529216486895LL, 1, -81985529216486895LL))
         return 1;
 
-    if (test__mulvti3(3037000499LL, 3037000499LL, 9223372030926249001LL))
+    if (test__mulvti3(3037000499LL, 3037000499LL, 9223372030926249001ULL))
         return 1;
     if (test__mulvti3(-3037000499LL, 3037000499LL, -9223372030926249001LL))
         return 1;
     if (test__mulvti3(3037000499LL, -3037000499LL, -9223372030926249001LL))
         return 1;
-    if (test__mulvti3(-3037000499LL, -3037000499LL, 9223372030926249001LL))
+    if (test__mulvti3(-3037000499LL, -3037000499LL, 9223372030926249001ULL))
         return 1;
 
     if (test__mulvti3(4398046511103LL, 2097152LL, 9223372036852678656LL))
@@ -116,7 +118,7 @@ int main()
     if (test__mulvti3(-4398046511103LL, -2097152LL, 9223372036852678656LL))
         return 1;
 
-    if (test__mulvti3(2097152LL, 4398046511103LL, 9223372036852678656LL))
+    if (test__mulvti3(2097152LL, 4398046511103LL, 9223372036852678656ULL))
         return 1;
     if (test__mulvti3(-2097152LL, 4398046511103LL, -9223372036852678656LL))
         return 1;

@@ -1,3 +1,5 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
+// REQUIRES: int128
 //===-- floattisf_test.c - Test __floattisf -------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -24,7 +26,7 @@
 
 // seee eeee emmm mmmm mmmm mmmm mmmm mmmm
 
-float __floattisf(ti_int a);
+COMPILER_RT_ABI float __floattisf(ti_int a);
 
 int test__floattisf(ti_int a, float expected)
 {

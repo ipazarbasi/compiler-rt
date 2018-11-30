@@ -31,6 +31,7 @@ struct AddressInfo {
 
   char *module;
   uptr module_offset;
+  ModuleArch module_arch;
 
   static const uptr kUnknown = ~(uptr)0;
   char *function;
@@ -43,7 +44,7 @@ struct AddressInfo {
   AddressInfo();
   // Deletes all strings and resets all fields.
   void Clear();
-  void FillModuleInfo(const char *mod_name, uptr mod_offset);
+  void FillModuleInfo(const char *mod_name, uptr mod_offset, ModuleArch arch);
 };
 
 // Linked list of symbolized frames (each frame is described by AddressInfo).
@@ -65,6 +66,10 @@ struct DataInfo {
   // (de)allocated using sanitizer internal allocator.
   char *module;
   uptr module_offset;
+  ModuleArch module_arch;
+
+  char *file;
+  uptr line;
   char *name;
   uptr start;
   uptr size;
@@ -75,29 +80,33 @@ struct DataInfo {
 
 class SymbolizerTool;
 
-class Symbolizer {
+class Symbolizer final {
  public:
   /// Initialize and return platform-specific implementation of symbolizer
   /// (if it wasn't already initialized).
   static Symbolizer *GetOrInit();
+  static void LateInitialize();
   // Returns a list of symbolized frames for a given address (containing
   // all inlined functions, if necessary).
   SymbolizedStack *SymbolizePC(uptr address);
   bool SymbolizeData(uptr address, DataInfo *info);
+
+  // The module names Symbolizer returns are stable and unique for every given
+  // module.  It is safe to store and compare them as pointers.
   bool GetModuleNameAndOffsetForPC(uptr pc, const char **module_name,
                                    uptr *module_address);
   const char *GetModuleNameForPc(uptr pc) {
-    const char *module_name = 0;
+    const char *module_name = nullptr;
     uptr unused;
     if (GetModuleNameAndOffsetForPC(pc, &module_name, &unused))
       return module_name;
     return nullptr;
   }
+
   // Release internal caches (if any).
   void Flush();
   // Attempts to demangle the provided C++ mangled name.
   const char *Demangle(const char *name);
-  void PrepareForSandboxing();
 
   // Allow user to install hooks that would be called before/after Symbolizer
   // does the actual file/line info fetching. Specific sanitizers may need this
@@ -109,17 +118,46 @@ class Symbolizer {
   void AddHooks(StartSymbolizationHook start_hook,
                 EndSymbolizationHook end_hook);
 
+  void RefreshModules();
+  const LoadedModule *FindModuleForAddress(uptr address);
+
+  void InvalidateModuleList();
+
  private:
+  // GetModuleNameAndOffsetForPC has to return a string to the caller.
+  // Since the corresponding module might get unloaded later, we should create
+  // our owned copies of the strings that we can safely return.
+  // ModuleNameOwner does not provide any synchronization, thus calls to
+  // its method should be protected by |mu_|.
+  class ModuleNameOwner {
+   public:
+    explicit ModuleNameOwner(BlockingMutex *synchronized_by)
+        : last_match_(nullptr), mu_(synchronized_by) {
+      storage_.reserve(kInitialCapacity);
+    }
+    const char *GetOwnedCopy(const char *str);
+
+   private:
+    static const uptr kInitialCapacity = 1000;
+    InternalMmapVector<const char*> storage_;
+    const char *last_match_;
+
+    BlockingMutex *mu_;
+  } module_names_;
+
   /// Platform-specific function for creating a Symbolizer object.
   static Symbolizer *PlatformInit();
 
-  virtual bool PlatformFindModuleNameAndOffsetForAddress(
-      uptr address, const char **module_name, uptr *module_offset) {
-    UNIMPLEMENTED();
-  }
+  bool FindModuleNameAndOffsetForAddress(uptr address, const char **module_name,
+                                         uptr *module_offset,
+                                         ModuleArch *module_arch);
+  ListOfModules modules_;
+  ListOfModules fallback_modules_;
+  // If stale, need to reload the modules before looking up addresses.
+  bool modules_fresh_;
+
   // Platform-specific default demangler, must not return nullptr.
-  virtual const char *PlatformDemangle(const char *name) { UNIMPLEMENTED(); }
-  virtual void PlatformPrepareForSandboxing() { UNIMPLEMENTED(); }
+  const char *PlatformDemangle(const char *name);
 
   static Symbolizer *symbolizer_;
   static StaticSpinMutex init_mu_;
@@ -129,10 +167,8 @@ class Symbolizer {
   // always synchronized.
   BlockingMutex mu_;
 
-  typedef IntrusiveList<SymbolizerTool>::Iterator Iterator;
   IntrusiveList<SymbolizerTool> tools_;
 
- protected:
   explicit Symbolizer(IntrusiveList<SymbolizerTool> tools);
 
   static LowLevelAllocator symbolizer_allocator_;
@@ -147,6 +183,10 @@ class Symbolizer {
     const Symbolizer *sym_;
   };
 };
+
+#ifdef SANITIZER_WINDOWS
+void InitializeDbgHelpIfNeeded();
+#endif
 
 }  // namespace __sanitizer
 

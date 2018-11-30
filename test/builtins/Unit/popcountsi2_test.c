@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- popcountsi2_test.c - Test __popcountsi2 ---------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -17,7 +18,7 @@
 
 // Returns: count of 1 bits
 
-si_int __popcountsi2(si_int a);
+COMPILER_RT_ABI si_int __popcountsi2(si_int a);
 
 int naive_popcount(si_int a)
 {

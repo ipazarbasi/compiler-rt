@@ -1,3 +1,5 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
+// REQUIRES: int128
 //===-- negti2_test.c - Test __negti2 -------------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -18,7 +20,7 @@
 
 // Returns: -a
 
-ti_int __negti2(ti_int a);
+COMPILER_RT_ABI ti_int __negti2(ti_int a);
 
 int test__negti2(ti_int a, ti_int expected)
 {

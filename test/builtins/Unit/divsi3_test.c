@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- divsi3_test.c - Test __divsi3 -------------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -16,7 +17,7 @@
 
 // Returns: a / b
 
-si_int __divsi3(si_int a, si_int b);
+COMPILER_RT_ABI si_int __divsi3(si_int a, si_int b);
 
 int test__divsi3(si_int a, si_int b, si_int expected)
 {

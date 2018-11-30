@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- udivdi3_test.c - Test __udivdi3 -----------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -16,7 +17,7 @@
 
 // Returns: a / b
 
-du_int __udivdi3(du_int a, du_int b);
+COMPILER_RT_ABI du_int __udivdi3(du_int a, du_int b);
 
 int test__udivdi3(du_int a, du_int b, du_int expected_q)
 {

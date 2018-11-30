@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- floatundidf_test.c - Test __floatundidf ---------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -22,7 +23,7 @@
 
 // seee eeee eeee mmmm mmmm mmmm mmmm mmmm | mmmm mmmm mmmm mmmm mmmm mmmm mmmm mmmm
 
-double __floatundidf(du_int a);
+COMPILER_RT_ABI double __floatundidf(du_int a);
 
 int test__floatundidf(di_int a, double expected)
 {

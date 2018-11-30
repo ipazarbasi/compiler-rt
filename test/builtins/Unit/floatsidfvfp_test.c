@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- floatsidfvfp_test.c - Test __floatsidfvfp -------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -11,14 +12,15 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "int_lib.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
 
-extern double __floatsidfvfp(int a);
+extern COMPILER_RT_ABI double __floatsidfvfp(int a);
 
-#if __arm__
+#if __arm__ && __VFP_FP__
 int test__floatsidfvfp(int a)
 {
     double actual = __floatsidfvfp(a);
@@ -32,7 +34,7 @@ int test__floatsidfvfp(int a)
 
 int main()
 {
-#if __arm__
+#if __arm__ && __VFP_FP__
     if (test__floatsidfvfp(0))
         return 1;
     if (test__floatsidfvfp(1))

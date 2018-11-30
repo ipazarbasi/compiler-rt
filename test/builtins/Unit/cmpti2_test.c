@@ -1,3 +1,5 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
+// REQUIRES: int128
 //===-- cmpti2_test.c - Test __cmpti2 -------------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -20,7 +22,7 @@
 //           if (a == b) returns 1
 //           if (a >  b) returns 2
 
-si_int __cmpti2(ti_int a, ti_int b);
+COMPILER_RT_ABI si_int __cmpti2(ti_int a, ti_int b);
 
 int test__cmpti2(ti_int a, ti_int b, si_int expected)
 {

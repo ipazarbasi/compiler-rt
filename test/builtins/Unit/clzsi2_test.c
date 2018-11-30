@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- clzsi2_test.c - Test __clzsi2 -------------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -18,7 +19,7 @@
 
 // Precondition: a != 0
 
-si_int __clzsi2(si_int a);
+COMPILER_RT_ABI si_int __clzsi2(si_int a);
 
 int test__clzsi2(si_int a, si_int expected)
 {

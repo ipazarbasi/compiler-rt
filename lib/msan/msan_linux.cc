@@ -9,13 +9,14 @@
 //
 // This file is a part of MemorySanitizer.
 //
-// Linux- and FreeBSD-specific code.
+// Linux-, NetBSD- and FreeBSD-specific code.
 //===----------------------------------------------------------------------===//
 
 #include "sanitizer_common/sanitizer_platform.h"
-#if SANITIZER_FREEBSD || SANITIZER_LINUX
+#if SANITIZER_FREEBSD || SANITIZER_LINUX || SANITIZER_NETBSD
 
 #include "msan.h"
+#include "msan_report.h"
 #include "msan_thread.h"
 
 #include <elf.h>
@@ -53,11 +54,21 @@ static bool CheckMemoryRangeAvailability(uptr beg, uptr size) {
   return true;
 }
 
-static bool ProtectMemoryRange(uptr beg, uptr size) {
+static bool ProtectMemoryRange(uptr beg, uptr size, const char *name) {
   if (size > 0) {
-    uptr end = beg + size - 1;
-    if (!Mprotect(beg, size)) {
-      Printf("FATAL: Cannot protect memory range %p - %p.\n", beg, end);
+    void *addr = MmapFixedNoAccess(beg, size, name);
+    if (beg == 0 && addr) {
+      // Depending on the kernel configuration, we may not be able to protect
+      // the page at address zero.
+      uptr gap = 16 * GetPageSizeCached();
+      beg += gap;
+      size -= gap;
+      addr = MmapFixedNoAccess(beg, size, name);
+    }
+    if ((uptr)addr != beg) {
+      uptr end = beg + size - 1;
+      Printf("FATAL: Cannot protect memory range %p - %p (%s).\n", beg, end,
+             name);
       return false;
     }
   }
@@ -95,7 +106,7 @@ static void CheckMemoryLayoutSanity() {
   }
 }
 
-bool InitShadow(bool map_shadow, bool init_origins) {
+bool InitShadow(bool init_origins) {
   // Let user know mapping parameters first.
   VPrintf(1, "__msan_init %p\n", &__msan_init);
   for (unsigned i = 0; i < kMemoryLayoutSize; ++i)
@@ -110,32 +121,42 @@ bool InitShadow(bool map_shadow, bool init_origins) {
     return false;
   }
 
+  const uptr maxVirtualAddress = GetMaxUserVirtualAddress();
+
   for (unsigned i = 0; i < kMemoryLayoutSize; ++i) {
     uptr start = kMemoryLayout[i].start;
     uptr end = kMemoryLayout[i].end;
     uptr size= end - start;
     MappingDesc::Type type = kMemoryLayout[i].type;
-    if ((map_shadow && type == MappingDesc::SHADOW) ||
-        (init_origins && type == MappingDesc::ORIGIN)) {
-      if (!CheckMemoryRangeAvailability(start, size)) return false;
-      if ((uptr)MmapFixedNoReserve(start, size) != start) return false;
+
+    // Check if the segment should be mapped based on platform constraints.
+    if (start >= maxVirtualAddress)
+      continue;
+
+    bool map = type == MappingDesc::SHADOW ||
+               (init_origins && type == MappingDesc::ORIGIN);
+    bool protect = type == MappingDesc::INVALID ||
+                   (!init_origins && type == MappingDesc::ORIGIN);
+    CHECK(!(map && protect));
+    if (!map && !protect)
+      CHECK(type == MappingDesc::APP);
+    if (map) {
+      if (!CheckMemoryRangeAvailability(start, size))
+        return false;
+      if (!MmapFixedNoReserve(start, size, kMemoryLayout[i].name))
+        return false;
       if (common_flags()->use_madv_dontdump)
         DontDumpShadowMemory(start, size);
-    } else if (type == MappingDesc::INVALID) {
-      if (!CheckMemoryRangeAvailability(start, size)) return false;
-      if (!ProtectMemoryRange(start, size)) return false;
+    }
+    if (protect) {
+      if (!CheckMemoryRangeAvailability(start, size))
+        return false;
+      if (!ProtectMemoryRange(start, size, kMemoryLayout[i].name))
+        return false;
     }
   }
 
   return true;
-}
-
-void MsanDie() {
-  if (common_flags()->coverage)
-    __sanitizer_cov_dump();
-  if (death_callback)
-    death_callback();
-  internal__exit(flags()->exit_code);
 }
 
 static void MsanAtExit(void) {
@@ -143,7 +164,8 @@ static void MsanAtExit(void) {
     ReportStats();
   if (msan_report_count > 0) {
     ReportAtExitStatistics();
-    if (flags()->exit_code) _exit(flags()->exit_code);
+    if (common_flags()->exitcode)
+      internal__exit(common_flags()->exitcode);
   }
 }
 
@@ -190,6 +212,6 @@ void MsanTSDDtor(void *tsd) {
   MsanThread::TSDDtor(tsd);
 }
 
-}  // namespace __msan
+} // namespace __msan
 
-#endif  // SANITIZER_FREEBSD || SANITIZER_LINUX
+#endif // SANITIZER_FREEBSD || SANITIZER_LINUX || SANITIZER_NETBSD

@@ -1,6 +1,14 @@
 // RUN: %clang_tsan -O1 %s -o %t && %run %t 2>&1 | FileCheck %s
 // CHECK-NOT: WARNING
 // CHECK: OK
+// This test is failing on powerpc64 (VMA=44). After calling pthread_cancel,
+// the Thread-specific data destructors are not called, so the destructor 
+// "thread_finalize" (defined in tsan_interceptors.cc) can not set the status
+// of the thread to "ThreadStatusFinished" failing a check in "SetJoined" 
+// (defined in sanitizer_thread_registry.cc). It might seem a bug on glibc,
+// however the same version GLIBC-2.17 will not make fail the test on 
+// powerpc64 BE (VMA=46)
+// UNSUPPORTED: powerpc64-unknown-linux-gnu
 
 #include "test.h"
 
@@ -8,9 +16,14 @@ pthread_mutex_t m;
 pthread_cond_t c;
 int x;
 
+static void my_cleanup(void *arg) {
+  printf("my_cleanup\n");
+  pthread_mutex_unlock((pthread_mutex_t*)arg);
+}
+
 void *thr1(void *p) {
   pthread_mutex_lock(&m);
-  pthread_cleanup_push((void(*)(void *arg))pthread_mutex_unlock, &m);
+  pthread_cleanup_push(my_cleanup, &m);
   barrier_wait(&barrier);
   while (x == 0)
     pthread_cond_wait(&c, &m);

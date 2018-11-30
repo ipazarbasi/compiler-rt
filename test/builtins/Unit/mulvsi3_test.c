@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- mulvsi3_test.c - Test __mulvsi3 -----------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -18,7 +19,7 @@
 
 // Effects: aborts if a * b overflows
 
-si_int __mulvsi3(si_int a, si_int b);
+COMPILER_RT_ABI si_int __mulvsi3(si_int a, si_int b);
 
 int test__mulvsi3(si_int a, si_int b, si_int expected)
 {

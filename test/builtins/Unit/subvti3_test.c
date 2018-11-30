@@ -1,3 +1,5 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
+// REQUIRES: int128
 //===-- subvti3_test.c - Test __subvti3 -----------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -21,7 +23,7 @@
 
 // Effects: aborts if a - b overflows
 
-ti_int __subvti3(ti_int a, ti_int b);
+COMPILER_RT_ABI ti_int __subvti3(ti_int a, ti_int b);
 
 int test__subvti3(ti_int a, ti_int b)
 {

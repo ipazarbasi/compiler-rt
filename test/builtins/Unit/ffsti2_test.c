@@ -1,3 +1,5 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
+// REQUIRES: int128
 //===-- ffsti2_test.c - Test __ffsti2 -------------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -19,7 +21,7 @@
 // Returns: the index of the least significant 1-bit in a, or
 // the value zero if a is zero. The least significant bit is index one.
 
-si_int __ffsti2(ti_int a);
+COMPILER_RT_ABI si_int __ffsti2(ti_int a);
 
 int test__ffsti2(ti_int a, si_int expected)
 {

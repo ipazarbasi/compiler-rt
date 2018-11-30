@@ -1,3 +1,5 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
+// REQUIRES: int128
 //===-- clzti2_test.c - Test __clzti2 -------------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -20,7 +22,7 @@
 
 // Precondition: a != 0
 
-si_int __clzti2(ti_int a);
+COMPILER_RT_ABI si_int __clzti2(ti_int a);
 
 int test__clzti2(ti_int a, si_int expected)
 {

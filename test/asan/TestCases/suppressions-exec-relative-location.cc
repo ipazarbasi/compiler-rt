@@ -4,27 +4,28 @@
 
 // If the executable is started from a different location, we should still
 // find the suppression file located relative to the location of the executable.
-// RUN: rm -rf %T/suppressions-exec-relative-location
-// RUN: mkdir -p %T/suppressions-exec-relative-location
-// RUN: %clangxx_asan -O0 %s -o %T/suppressions-exec-relative-location/exec
+// RUN: rm -rf %t-dir
+// RUN: mkdir -p %t-dir
+// RUN: %clangxx_asan -O0 %s -o %t-dir/exec
 // RUN: echo "interceptor_via_fun:crash_function" > \
-// RUN:   %T/suppressions-exec-relative-location/supp.txt
-// RUN: ASAN_OPTIONS="suppressions=supp.txt" \
-// RUN:   %run %T/suppressions-exec-relative-location/exec 2>&1 | \
+// RUN:   %t-dir/supp.txt
+// RUN: %env_asan_opts=suppressions='"supp.txt"' \
+// RUN:   %run %t-dir/exec 2>&1 | \
 // RUN:   FileCheck --check-prefix=CHECK-IGNORE %s
-// RUN: rm -rf %T/suppressions-exec-relative-location
+// RUN: rm -rf %t-dir
 
 // If the wrong absolute path is given, we don't try to construct
 // a relative path with it.
-// RUN: ASAN_OPTIONS="suppressions='/absolute/path'" not %run %t 2>&1 | \
+// RUN: %env_asan_opts=suppressions='"/absolute/path"' not %run %t 2>&1 | \
 // RUN:   FileCheck --check-prefix=CHECK-WRONG-FILE-NAME %s
 
 // Test that we reject directory as filename.
-// RUN: ASAN_OPTIONS="suppressions='folder/only/'" not %run %t 2>&1 | \
+// RUN: %env_asan_opts=suppressions='"folder/only/"' not %run %t 2>&1 | \
 // RUN:   FileCheck --check-prefix=CHECK-WRONG-FILE-NAME %s
 
 // XFAIL: android
-// XFAIL: win32
+// XFAIL: windows-msvc
+// UNSUPPORTED: ios
 
 #include <stdio.h>
 #include <stdlib.h>

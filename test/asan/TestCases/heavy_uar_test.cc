@@ -1,10 +1,14 @@
-// RUN: export ASAN_OPTIONS=detect_stack_use_after_return=1
-// RUN: %clangxx_asan -O0 %s -o %t && not %run %t 2>&1 | FileCheck %s
-// RUN: %clangxx_asan -O2 %s -o %t && not %run %t 2>&1 | FileCheck %s
-// XFAIL: arm-linux-gnueabi
+// RUN: %clangxx_asan -O0 %s -o %t && %env_asan_opts=detect_stack_use_after_return=1 not %run %t 2>&1 | FileCheck %s
+// RUN: %clangxx_asan -O2 %s -o %t && %env_asan_opts=detect_stack_use_after_return=1 not %run %t 2>&1 | FileCheck %s
+// XFAIL: windows-msvc
 
 // FIXME: Fix this test under GCC.
 // REQUIRES: Clang
+
+// FIXME: Fix this test for dynamic runtime on arm linux.
+// UNSUPPORTED: (arm-linux || armhf-linux) && asan-dynamic-runtime
+
+// UNSUPPORTED: ios
 
 #include <stdio.h>
 #include <string.h>
@@ -34,6 +38,12 @@ void RecursiveFunctionWithStackFrame(int depth) {
 }
 
 int main(int argc, char **argv) {
+#ifdef _MSC_VER
+  // FIXME: This test crashes on Windows and raises a dialog. Avoid running it
+  // in addition to XFAILing it.
+  return 42;
+#endif
+
   int n_iter = argc >= 2 ? atoi(argv[1]) : 1000;
   int depth  = argc >= 3 ? atoi(argv[2]) : 500;
   for (int i = 0; i < n_iter; i++) {
@@ -43,8 +53,8 @@ int main(int argc, char **argv) {
     RecursiveFunctionWithStackFrame<1024>(depth);
     RecursiveFunctionWithStackFrame<2000>(depth);
     // The stack size is tight for the main thread in multithread
-    // environment on FreeBSD.
-#if !defined(__FreeBSD__)
+    // environment on FreeBSD and NetBSD.
+#if !defined(__FreeBSD__) && !defined(__NetBSD__)
     RecursiveFunctionWithStackFrame<5000>(depth);
     RecursiveFunctionWithStackFrame<10000>(depth);
 #endif

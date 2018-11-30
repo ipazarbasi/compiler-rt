@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- absvsi2_test.c - Test __absvsi2 -----------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -19,7 +20,7 @@
 
 // Effects: aborts if abs(x) < 0
 
-si_int __absvsi2(si_int a);
+COMPILER_RT_ABI si_int __absvsi2(si_int a);
 
 int test__absvsi2(si_int a)
 {

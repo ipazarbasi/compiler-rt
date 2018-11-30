@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- floatdisf_test.c - Test __floatdisf -------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -22,7 +23,7 @@
 
 // seee eeee emmm mmmm mmmm mmmm mmmm mmmm
 
-float __floatdisf(di_int a);
+COMPILER_RT_ABI float __floatdisf(di_int a);
 
 int test__floatdisf(di_int a, float expected)
 {

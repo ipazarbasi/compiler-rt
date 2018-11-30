@@ -1,3 +1,5 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
+// REQUIRES: int128
 //===-- fixdfti_test.c - Test __fixdfti -----------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -24,7 +26,7 @@
 
 // seee eeee eeee mmmm mmmm mmmm mmmm mmmm | mmmm mmmm mmmm mmmm mmmm mmmm mmmm mmmm
 
-ti_int __fixdfti(double a);
+COMPILER_RT_ABI ti_int __fixdfti(double a);
 
 int test__fixdfti(double a, ti_int expected)
 {

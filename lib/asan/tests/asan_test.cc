@@ -12,6 +12,24 @@
 //===----------------------------------------------------------------------===//
 #include "asan_test_utils.h"
 
+#include <errno.h>
+#include <stdarg.h>
+
+#ifdef _LIBCPP_GET_C_LOCALE
+#define SANITIZER_GET_C_LOCALE _LIBCPP_GET_C_LOCALE
+#else
+#if defined(__FreeBSD__)
+#define SANITIZER_GET_C_LOCALE 0
+#elif defined(__NetBSD__)
+#define SANITIZER_GET_C_LOCALE LC_C_LOCALE
+#endif
+#endif
+
+#if defined(__sun__) && defined(__svr4__)
+using std::_setjmp;
+using std::_longjmp;
+#endif
+
 NOINLINE void *malloc_fff(size_t size) {
   void *res = malloc/**/(size); break_optimization(0); return res;}
 NOINLINE void *malloc_eee(size_t size) {
@@ -74,9 +92,11 @@ TEST(AddressSanitizer, VariousMallocsTest) {
   delete c;
 
 #if SANITIZER_TEST_HAS_POSIX_MEMALIGN
-  int *pm;
-  int pm_res = posix_memalign((void**)&pm, kPageSize, kPageSize);
+  void *pm = 0;
+  // Valid allocation.
+  int pm_res = posix_memalign(&pm, kPageSize, kPageSize);
   EXPECT_EQ(0, pm_res);
+  EXPECT_NE(nullptr, pm);
   free(pm);
 #endif  // SANITIZER_TEST_HAS_POSIX_MEMALIGN
 
@@ -250,21 +270,22 @@ TEST(AddressSanitizer, BitFieldNegativeTest) {
 #if ASAN_NEEDS_SEGV
 namespace {
 
-const char kUnknownCrash[] = "AddressSanitizer: SEGV on unknown address";
-const char kOverriddenHandler[] = "ASan signal handler has been overridden\n";
+const char kSEGVCrash[] = "AddressSanitizer: SEGV on unknown address";
+const char kOverriddenSigactionHandler[] = "Test sigaction handler\n";
+const char kOverriddenSignalHandler[] = "Test signal handler\n";
 
 TEST(AddressSanitizer, WildAddressTest) {
   char *c = (char*)0x123;
-  EXPECT_DEATH(*c = 0, kUnknownCrash);
+  EXPECT_DEATH(*c = 0, kSEGVCrash);
 }
 
 void my_sigaction_sighandler(int, siginfo_t*, void*) {
-  fprintf(stderr, kOverriddenHandler);
+  fprintf(stderr, kOverriddenSigactionHandler);
   exit(1);
 }
 
 void my_signal_sighandler(int signum) {
-  fprintf(stderr, kOverriddenHandler);
+  fprintf(stderr, kOverriddenSignalHandler);
   exit(1);
 }
 
@@ -273,16 +294,20 @@ TEST(AddressSanitizer, SignalTest) {
   memset(&sigact, 0, sizeof(sigact));
   sigact.sa_sigaction = my_sigaction_sighandler;
   sigact.sa_flags = SA_SIGINFO;
-  // ASan should silently ignore sigaction()...
+  char *c = (char *)0x123;
+
+  EXPECT_DEATH(*c = 0, kSEGVCrash);
+
+  // ASan should allow to set sigaction()...
   EXPECT_EQ(0, sigaction(SIGSEGV, &sigact, 0));
 #ifdef __APPLE__
   EXPECT_EQ(0, sigaction(SIGBUS, &sigact, 0));
 #endif
-  char *c = (char*)0x123;
-  EXPECT_DEATH(*c = 0, kUnknownCrash);
+  EXPECT_DEATH(*c = 0, kOverriddenSigactionHandler);
+
   // ... and signal().
-  EXPECT_EQ(0, signal(SIGSEGV, my_signal_sighandler));
-  EXPECT_DEATH(*c = 0, kUnknownCrash);
+  EXPECT_NE(SIG_ERR, signal(SIGSEGV, my_signal_sighandler));
+  EXPECT_DEATH(*c = 0, kOverriddenSignalHandler);
 }
 }  // namespace
 #endif
@@ -300,6 +325,7 @@ TEST(AddressSanitizer, LargeMallocTest) {
   }
 }
 
+#if !GTEST_USES_SIMPLE_RE
 TEST(AddressSanitizer, HugeMallocTest) {
   if (SANITIZER_WORDSIZE != 64 || ASAN_AVOID_EXPENSIVE_TESTS) return;
   size_t n_megs = 4100;
@@ -307,6 +333,7 @@ TEST(AddressSanitizer, HugeMallocTest) {
                "is located 1 bytes to the left|"
                "AddressSanitizer failed to allocate");
 }
+#endif
 
 #if SANITIZER_TEST_HAS_MEMALIGN
 void MemalignRun(size_t align, size_t size, int idx) {
@@ -335,6 +362,9 @@ void *ManyThreadsWorker(void *a) {
   return 0;
 }
 
+#if !defined(__aarch64__) && !defined(__powerpc64__)
+// FIXME: Infinite loop in AArch64 (PR24389).
+// FIXME: Also occasional hang on powerpc.  Maybe same problem as on AArch64?
 TEST(AddressSanitizer, ManyThreadsTest) {
   const size_t kNumThreads =
       (SANITIZER_WORDSIZE == 32 || ASAN_AVOID_EXPENSIVE_TESTS) ? 30 : 1000;
@@ -346,6 +376,7 @@ TEST(AddressSanitizer, ManyThreadsTest) {
     PTHREAD_JOIN(t[i], 0);
   }
 }
+#endif
 
 TEST(AddressSanitizer, ReallocTest) {
   const int kMinElem = 5;
@@ -592,8 +623,8 @@ NOINLINE void SigLongJmpFunc1(sigjmp_buf buf) {
 }
 
 #if !defined(__ANDROID__) && !defined(__arm__) && \
-    !defined(__powerpc64__) && !defined(__powerpc__) && \
-    !defined(__aarch64__)
+    !defined(__aarch64__) && !defined(__mips__) && \
+    !defined(__mips64) && !defined(__s390__)
 NOINLINE void BuiltinLongJmpFunc1(jmp_buf buf) {
   // create three red zones for these two stack objects.
   int a;
@@ -605,8 +636,8 @@ NOINLINE void BuiltinLongJmpFunc1(jmp_buf buf) {
   __builtin_longjmp((void**)buf, 1);
 }
 
-// Does not work on Power and ARM:
-// https://code.google.com/p/address-sanitizer/issues/detail?id=185
+// Does not work on ARM:
+// https://github.com/google/sanitizers/issues/185
 TEST(AddressSanitizer, BuiltinLongJmpTest) {
   static jmp_buf buf;
   if (!__builtin_setjmp((void**)buf)) {
@@ -615,8 +646,9 @@ TEST(AddressSanitizer, BuiltinLongJmpTest) {
     TouchStackFunc();
   }
 }
-#endif  // !defined(__ANDROID__) && !defined(__powerpc64__) &&
-        // !defined(__powerpc__) && !defined(__arm__)
+#endif  // !defined(__ANDROID__) && !defined(__arm__) &&
+        // !defined(__aarch64__) && !defined(__mips__)
+        // !defined(__mips64) && !defined(__s390__)
 
 TEST(AddressSanitizer, UnderscopeLongJmpTest) {
   static jmp_buf buf;
@@ -678,6 +710,7 @@ void *ThreadStackReuseFunc2(void *unused) {
   return 0;
 }
 
+#if !defined(__thumb__)
 TEST(AddressSanitizer, ThreadStackReuseTest) {
   pthread_t t;
   PTHREAD_CREATE(&t, 0, ThreadStackReuseFunc1, 0);
@@ -685,8 +718,9 @@ TEST(AddressSanitizer, ThreadStackReuseTest) {
   PTHREAD_CREATE(&t, 0, ThreadStackReuseFunc2, 0);
   PTHREAD_JOIN(t, 0);
 }
+#endif
 
-#if defined(__i686__) || defined(__x86_64__)
+#if defined(__SSE2__)
 #include <emmintrin.h>
 TEST(AddressSanitizer, Store128Test) {
   char *a = Ident((char*)malloc(Ident(12)));
@@ -803,9 +837,6 @@ TEST(AddressSanitizer, DISABLED_MemIntrinsicUnalignedAccessTest) {
   EXPECT_DEATH(memset(s + size - 1, 0, 2), RightOOBWriteMessage(0));
   free(s);
 }
-
-// TODO(samsonov): Add a test with malloc(0)
-// TODO(samsonov): Add tests for str* and mem* functions.
 
 NOINLINE static int LargeFunction(bool do_bad_access) {
   int *x = new int[100];
@@ -932,15 +963,17 @@ TEST(AddressSanitizer, ThreadNamesTest) {
 #if ASAN_NEEDS_SEGV
 TEST(AddressSanitizer, ShadowGapTest) {
 #if SANITIZER_WORDSIZE == 32
-  char *addr = (char*)0x22000000;
+  char *addr = (char*)0x23000000;
 #else
 # if defined(__powerpc64__)
   char *addr = (char*)0x024000800000;
+# elif defined(__s390x__)
+  char *addr = (char*)0x11000000000000;
 # else
   char *addr = (char*)0x0000100000080000;
 # endif
 #endif
-  EXPECT_DEATH(*addr = 1, "AddressSanitizer: SEGV on unknown");
+  EXPECT_DEATH(*addr = 1, "AddressSanitizer: (SEGV|BUS) on unknown");
 }
 #endif  // ASAN_NEEDS_SEGV
 
@@ -1085,6 +1118,11 @@ TEST(AddressSanitizer, ThreadedStressStackReuseTest) {
   }
 }
 
+// pthread_exit tries to perform unwinding stuff that leads to dlopen'ing
+// libgcc_s.so. dlopen in its turn calls malloc to store "libgcc_s.so" string
+// that confuses LSan on Thumb because it fails to understand that this
+// allocation happens in dynamic linker and should be ignored.
+#if !defined(__thumb__)
 static void *PthreadExit(void *a) {
   pthread_exit(0);
   return 0;
@@ -1097,6 +1135,7 @@ TEST(AddressSanitizer, PthreadExitTest) {
     PTHREAD_JOIN(t, 0);
   }
 }
+#endif
 
 // FIXME: Why does clang-cl define __EXCEPTIONS?
 #if defined(__EXCEPTIONS) && !defined(_WIN32)
@@ -1151,9 +1190,9 @@ TEST(AddressSanitizer, AttributeNoSanitizeAddressTest) {
 // The new/delete/etc mismatch checks don't work on Android,
 //   as calls to new/delete go through malloc/free.
 // OS X support is tracked here:
-//   https://code.google.com/p/address-sanitizer/issues/detail?id=131
+//   https://github.com/google/sanitizers/issues/131
 // Windows support is tracked here:
-//   https://code.google.com/p/address-sanitizer/issues/detail?id=309
+//   https://github.com/google/sanitizers/issues/309
 #if !defined(__ANDROID__) && \
     !defined(__APPLE__) && \
     !defined(_WIN32)
@@ -1161,15 +1200,21 @@ static string MismatchStr(const string &str) {
   return string("AddressSanitizer: alloc-dealloc-mismatch \\(") + str;
 }
 
+static string MismatchOrNewDeleteTypeStr(const string &mismatch_str) {
+  return "(" + MismatchStr(mismatch_str) +
+         ")|(AddressSanitizer: new-delete-type-mismatch)";
+}
+
 TEST(AddressSanitizer, AllocDeallocMismatch) {
   EXPECT_DEATH(free(Ident(new int)),
                MismatchStr("operator new vs free"));
   EXPECT_DEATH(free(Ident(new int[2])),
                MismatchStr("operator new \\[\\] vs free"));
-  EXPECT_DEATH(delete (Ident(new int[2])),
-               MismatchStr("operator new \\[\\] vs operator delete"));
-  EXPECT_DEATH(delete (Ident((int*)malloc(2 * sizeof(int)))),
-               MismatchStr("malloc vs operator delete"));
+  EXPECT_DEATH(
+      delete (Ident(new int[2])),
+      MismatchOrNewDeleteTypeStr("operator new \\[\\] vs operator delete"));
+  EXPECT_DEATH(delete (Ident((int *)malloc(2 * sizeof(int)))),
+               MismatchOrNewDeleteTypeStr("malloc vs operator delete"));
   EXPECT_DEATH(delete [] (Ident(new int)),
                MismatchStr("operator new vs operator delete \\[\\]"));
   EXPECT_DEATH(delete [] (Ident((int*)malloc(2 * sizeof(int)))),
@@ -1250,7 +1295,8 @@ TEST(AddressSanitizer, DISABLED_DemoTooMuchMemoryTest) {
   }
 }
 
-// http://code.google.com/p/address-sanitizer/issues/detail?id=66
+#if !defined(__NetBSD__) && !defined(__i386__)
+// https://github.com/google/sanitizers/issues/66
 TEST(AddressSanitizer, BufferOverflowAfterManyFrees) {
   for (int i = 0; i < 1000000; i++) {
     delete [] (Ident(new char [8644]));
@@ -1259,6 +1305,7 @@ TEST(AddressSanitizer, BufferOverflowAfterManyFrees) {
   EXPECT_DEATH(x[Ident(8192)] = 0, "AddressSanitizer: heap-buffer-overflow");
   delete [] Ident(x);
 }
+#endif
 
 
 // Test that instrumentation of stack allocations takes into account
@@ -1299,19 +1346,18 @@ static int vsnprintf_l_wrapper(char *s, size_t n,
 TEST(AddressSanitizer, snprintf_l) {
   char buff[5];
   // Check that snprintf_l() works fine with Asan.
-  int res = snprintf_l(buff, 5,
-                       _LIBCPP_GET_C_LOCALE, "%s", "snprintf_l()");
+  int res = snprintf_l(buff, 5, SANITIZER_GET_C_LOCALE, "%s", "snprintf_l()");
   EXPECT_EQ(12, res);
   // Check that vsnprintf_l() works fine with Asan.
-  res = vsnprintf_l_wrapper(buff, 5,
-                            _LIBCPP_GET_C_LOCALE, "%s", "vsnprintf_l()");
+  res = vsnprintf_l_wrapper(buff, 5, SANITIZER_GET_C_LOCALE, "%s",
+                            "vsnprintf_l()");
   EXPECT_EQ(13, res);
 
-  EXPECT_DEATH(snprintf_l(buff, 10,
-                          _LIBCPP_GET_C_LOCALE, "%s", "snprintf_l()"),
-                "AddressSanitizer: stack-buffer-overflow");
-  EXPECT_DEATH(vsnprintf_l_wrapper(buff, 10,
-                                  _LIBCPP_GET_C_LOCALE, "%s", "vsnprintf_l()"),
-                "AddressSanitizer: stack-buffer-overflow");
+  EXPECT_DEATH(
+      snprintf_l(buff, 10, SANITIZER_GET_C_LOCALE, "%s", "snprintf_l()"),
+      "AddressSanitizer: stack-buffer-overflow");
+  EXPECT_DEATH(vsnprintf_l_wrapper(buff, 10, SANITIZER_GET_C_LOCALE, "%s",
+                                   "vsnprintf_l()"),
+               "AddressSanitizer: stack-buffer-overflow");
 }
 #endif

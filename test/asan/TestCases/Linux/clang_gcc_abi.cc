@@ -3,14 +3,14 @@
 // RUN: %clangxx_asan -O2 -x c %s -o %t && not %run %t 2>&1 | FileCheck %s
 // RUN: %clangxx_asan -O3 -x c %s -o %t && not %run %t 2>&1 | FileCheck %s
 
-// REQUIRES: arm-supported-target
-// XFAIL: armv7l-unknown-linux-gnueabihf
+// REQUIRES: (arm-target-arch || armhf-target-arch), fast-unwinder-works
 
 #include <stdlib.h>
 
+__attribute__((noinline))
 int boom() {
   volatile int three = 3;
-  char *s = (char *)malloc(three);
+  char * volatile s = (char *)malloc(three);
 // CHECK: #1 0x{{.*}} in boom {{.*}}clang_gcc_abi.cc:[[@LINE-1]]
   return s[three]; //BOOM
 }

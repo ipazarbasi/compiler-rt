@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- subvdi3_test.c - Test __subvdi3 -----------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -19,7 +20,7 @@
 
 // Effects: aborts if a - b overflows
 
-di_int __subvdi3(di_int a, di_int b);
+COMPILER_RT_ABI di_int __subvdi3(di_int a, di_int b);
 
 int test__subvdi3(di_int a, di_int b)
 {

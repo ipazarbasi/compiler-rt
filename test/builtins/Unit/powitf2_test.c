@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- powitf2_test.cpp - Test __powitf2 ---------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -20,7 +21,7 @@
 
 // Returns: a ^ b
 
-long double __powitf2(long double a, si_int b);
+COMPILER_RT_ABI long double __powitf2(long double a, si_int b);
 
 int test__powitf2(long double a, si_int b, long double expected)
 {

@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 /* ===-- modsi3_test.c - Test __modsi3 -------------------------------------===
  *
  *                     The LLVM Compiler Infrastructure
@@ -17,7 +18,7 @@
 
 /* Returns: a % b */
 
-si_int __modsi3(si_int a, si_int b);
+COMPILER_RT_ABI si_int __modsi3(si_int a, si_int b);
 
 int test__modsi3(si_int a, si_int b, si_int expected) {
     si_int x = __modsi3(a, b);

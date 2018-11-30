@@ -3,10 +3,16 @@
 // RUN: not %run %t 2>&1 | FileCheck --check-prefix=CHECK-CRASH %s
 
 // RUN: echo "interceptor_via_fun:crash_function" > %t.supp
-// RUN: %clangxx_asan -O0 %s -o %t && ASAN_OPTIONS="suppressions='%t.supp'" %run %t 2>&1 | FileCheck --check-prefix=CHECK-IGNORE %s
-// RUN: %clangxx_asan -O3 %s -o %t && ASAN_OPTIONS="suppressions='%t.supp'" %run %t 2>&1 | FileCheck --check-prefix=CHECK-IGNORE %s
+// RUN: %clangxx_asan -O0 %s -o %t && %env_asan_opts=suppressions='"%t.supp"' %run %t 2>&1 | FileCheck --check-prefix=CHECK-IGNORE %s
+// RUN: %clangxx_asan -O3 %s -o %t && %env_asan_opts=suppressions='"%t.supp"' %run %t 2>&1 | FileCheck --check-prefix=CHECK-IGNORE %s
 
-// XFAIL: android
+// FIXME: Windows symbolizer needs work to make this pass.
+// XFAIL: android,windows-msvc
+// UNSUPPORTED: ios
+
+// FIXME: atos does not work for inlined functions, yet llvm-symbolizer
+// does not always work with debug info on Darwin.
+// UNSUPPORTED: darwin
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,3 +1,4 @@
+// RUN: %clang_builtins %s %librt -o %t && %run %t
 //===-- ctzdi2_test.c - Test __ctzdi2 -------------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -18,7 +19,7 @@
 
 // Precondition: a != 0
 
-si_int __ctzdi2(di_int a);
+COMPILER_RT_ABI si_int __ctzdi2(di_int a);
 
 int test__ctzdi2(di_int a, si_int expected)
 {

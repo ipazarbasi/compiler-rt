@@ -4,6 +4,9 @@
 // RUN: %clangxx_msan -DPOSITIVE -O0 -g %s -o %t && not %run %t 2>&1 | FileCheck %s
 // RUN: %clangxx_msan -DPOSITIVE -O3 -g %s -o %t && not %run %t 2>&1 | FileCheck %s
 
+// Reports different report (not analyzed)
+// XFAIL: netbsd
+
 #include <assert.h>
 #include <stdlib.h>
 #include <net/if.h>
@@ -14,7 +17,7 @@
 #include <unistd.h>
 
 int main(int argc, char **argv) {
-  int fd = socket(AF_INET, SOCK_STREAM, 0);
+  int fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
   struct ifreq ifreqs[20];
   struct ifconf ifc;
